@@ -7,6 +7,9 @@ library(openxlsx)
 library(janitor)
 library(htmlwidgets)
 library(plotly)
+library(tmap)
+library(terra)
+library(exactextractr)
 ```
 
 Load Energy Data & Filter for TEXAS 
@@ -60,11 +63,21 @@ metadata_socio_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48
 
 Load Texas counties 
 ```{r}
-texas_counties <- st_read(here::here("data", "raw", "Texas_County_Boundaries"))%>% clean_names()
+#texas_counties <- st_read(here::here("data", "raw", "Texas_County_Boundaries"))%>% clean_names() # Not what I want 
+texas_counties <- st_read(here::here("data", "raw", "tl_2024_us_county"))%>% clean_names() %>% 
+  filter(statefp == '48')# THIS IS WHAT I WANT 
+
 ```
 
+Load Texas environmental 
+```{r}
+sunshine <- terra::rast(here::here("data", "raw", "nsrdbv3_ghi", "Annual GHI", "nsrdb3_ghi.tif"))%>% clean_names()
+```
+
+# Wrangling 
 
 Making Socio-demographic dataframe spatial 
+Join Socio-demographic dataframe  with `geom_texas` to add the countyfp column and make spatial 
 ```{r}
 income_texas_sf <- dplyr::left_join(geom_texas, income_texas, by = c("geoid_data"= "geoid")) 
 race_texas_sf <- dplyr::left_join(geom_texas, race_texas, by = c("geoid_data"= "geoid")) 
@@ -127,9 +140,10 @@ age_sex_texas_county <- age_sex_texas_county %>% arrange(as.numeric(countyfp))
 
 
 # Merge the sociodemographic data 
-final_df <- cbind(race_texas_county, income_texas_county, poverty_texas_county, education_texas_county, age_sex_texas_county) 
+final_df_sf <- cbind(race_texas_county, income_texas_county, poverty_texas_county, education_texas_county, age_sex_texas_county) 
 
-final_df <- final_df %>% 
+# Remove unnessary columns 
+final_df_sf <- final_df_sf %>% 
   select(-c(`countyfp.1`, `countyfp.2`, `countyfp.3`, `countyfp.4`, `Shape.1`, `Shape.2`, `Shape.3`, `Shape.4`))
 
 ```
@@ -137,67 +151,94 @@ final_df <- final_df %>%
 Pre capita 
 ```{r}
 # Divide the columns by the population column 
-final_df[, 3:17] <- final_df[, 3:17] / final_df$pop_total
+final_df_sf[, 3:17] <- final_df_sf[, 3:17] / final_df$pop_total
 ```
 
 Add the county names to the data 
-**This join did not work the way I wanted it to**
 ```{r}
-st_crs(final_df)# NAD8 / EPSG",4269] - geographic 
-st_crs(texas_counties)# EPSG",3857 - projection 
+# Drop the geometry from the socio demographic data 
+final_df <- final_df_sf %>% 
+  st_drop_geometry()
 
-texas_counties <- st_transform(texas_counties, crs = "EPSG:4269")
-st_crs(final_df) == st_crs(texas_counties)
+# Join with 
+socio_demo_texas <- left_join(final_df, texas_counties, by = "countyfp")
 
-socio_demo_texas <- st_join(final_df, texas_counties)
+# Make spatail 
+socio_demo_texas <- st_as_sf(socio_demo_texas)
 ```
 
+
+Looking at outputs 
+`socio_demo_texas` should be 254 rows (254 counties in TX)
 ```{r}
 dim(socio_demo_texas)
 dim(texas_counties)
 dim(final_df)
 n_distinct(socio_demo_texas$countyfp)
 ```
-
+Create map to show results and dataframes 
 ```{r}
-texas_counties %>% filter(dps_cnty_n == 1)
-
-final_df %>% filter(countyfp == 1)
-
-```
-
-
-```{r}
-ggplot_static <- ggplot(socio_demo_texas) + 
-  geom_sf(aes(text = paste0("County name:", {cnty_nm}, "<br>", 
-                            "dps_cnty_n:", {dps_cnty_n}, "<br>",
+TX_counties_static <- ggplot(texas_counties) + 
+  geom_sf(aes(text = paste0("County name:", {name}, "<br>", 
                             "countyfp:", {countyfp}, "<br>",
-                            "cnty_nbr:", {cnty_nbr}, "<br>"
+                            "geoid:", {geoid}, "<br>"
                             )))
 
-ggplotly(ggplot_static, tooltip = "text")
+final_df_static <- ggplot(final_df_sf) + 
+  geom_sf(aes(text = paste0("countyfp:", {countyfp}, "<br>"
+                            )))
+
+
+socio_demo_static <- ggplot(socio_demo_texas) + 
+  geom_sf(aes(text = paste0("County name:", {name}, "<br>", 
+                            "countyfp:", {countyfp}, "<br>" )))
+
+TX_counties_static
+final_df_static
+socio_demo_static
+
+ggplotly(TX_counties_static, tooltip = "text")
+ggplotly(final_df_static, tooltip = "text")
+ggplotly(socio_demo_static, tooltip = "text")
 ```
 
 
-# --- 
-
-
 ```{r}
-metadata_socio_texas %>% 
-  filter(Short_Name == "B15001e1")
+socio_demo <- ggplot(socio_demo_texas) + 
+  geom_sf(aes(fill = ai_an_total,
+              text = paste0("County name:", {name}, "<br>", 
+                            "countyfp:", {countyfp}, "<br>",
+                            "geoid:", {geoid}, "<br>"
+                            )))
+
+ggplotly(socio_demo, tooltip = "text")
+
 ```
 
-
+Sunshine Wrangling 
 ```{r}
-ggplot(income_texas_sf) + 
-  geom_sf(aes(color = B19001e1))
+# Its South and North America
+tm_shape(sunshine) + 
+  tm_raster()
 
-ggplot(race_texas_sf) + 
-  geom_sf(aes(color = B02001e1))
+# Crop and mask to TEXAS 
+texas_bbox <- ext(texas_counties) # Extracts the bounding box from the vector geometry
+sunshine_masked <- crop(sunshine, texas_bbox)
+sunshine_masked <- terra::mask(sunshine_masked, texas_counties)
 
-ggplot(education_texas_sf) + 
-  geom_sf(aes(color = B15001e1))
+# Check to see if it worked 
+tm_shape(sunshine_masked) + 
+  tm_raster() + 
+  tm_shape(texas_counties) + 
+  tm_borders()
 
+sunshine_polygons <- as.polygons(sunshine_masked)
+
+tm_shape(sunshine_polygons) + 
+  tm_polygons() 
+
+# Extract rasters into county polygons 
+texas_counties$ghi <- exact_extract(sunshine_masked, texas_counties, 'mean')
 
 
 ```
