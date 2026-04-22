@@ -1,0 +1,79 @@
+Load Libraries 
+```{r}
+library(tidyverse)
+library(dplyr)
+library(sf)
+library(openxlsx)
+library(janitor)
+```
+
+Load Energy Data & Filter for TEXAS 
+```{r}
+utility_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "1___Utility_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+
+plant_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "2___Plant_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+
+wind_energy_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_2_Wind_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+
+solar_energy_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_3_Solar_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+
+storge_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_4_Energy_Storage_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+
+generator_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_1_Generator_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+
+multifuel_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_5_Multifuel_Y2024.xlsx"), startRow = 2) %>% 
+  clean_names() %>% 
+  filter(state == "TX")
+```
+
+Load Texas Socio-demographic 
+```{r}
+#st_layers(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"))
+
+# Geom 
+geom_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "ACS_2019_5YR_TRACT_48_TEXAS")
+
+# Socio-demo info 
+age_sex_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X01_AGE_AND_SEX")
+income_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X19_INCOME")
+race_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X02_RACE")
+poverty_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X17_POVERTY")
+education_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X15_EDUCATIONAL_ATTAINMENT")
+
+# Meta data 
+metadata_socio_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "TRACT_METADATA_2019")
+```
+
+Making Socio-demographic dataframe spatial 
+```{r}
+income_texas_sf <- dplyr::left_join(geom_texas, income_texas, by = c("GEOID_Data"= "GEOID"))
+race_texas_sf <- dplyr::left_join(geom_texas, race_texas, by = c("GEOID_Data"= "GEOID"))
+poverty_texas_sf <- dplyr::left_join(geom_texas, poverty_texas, by = c("GEOID_Data"= "GEOID"))
+education_texas_sf <- dplyr::left_join(geom_texas, education_texas, by = c("GEOID_Data"= "GEOID"))
+age_sex_texas_sf <- dplyr::left_join(geom_texas, age_sex_texas, by = c("GEOID_Data"= "GEOID"))
+
+# Remove non spatial dfs 
+rm(list = c('income_texas', 'race_texas', 'poverty_texas', 'education_texas', 'age_sex_texas'))
+```
+
+```{r}
+ggplot(income_texas_sf) + 
+  geom_sf(aes(color = ))
+
+education_texas_sf %>% 
+  filter(Short_Name == "B15001e2")
+```
+
+
