@@ -5,6 +5,8 @@ library(dplyr)
 library(sf)
 library(openxlsx)
 library(janitor)
+library(htmlwidgets)
+library(plotly)
 ```
 
 Load Energy Data & Filter for TEXAS 
@@ -43,37 +45,161 @@ Load Texas Socio-demographic
 #st_layers(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"))
 
 # Geom 
-geom_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "ACS_2019_5YR_TRACT_48_TEXAS")
+geom_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "ACS_2019_5YR_TRACT_48_TEXAS")%>% clean_names()
 
 # Socio-demo info 
-age_sex_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X01_AGE_AND_SEX")
-income_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X19_INCOME")
-race_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X02_RACE")
-poverty_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X17_POVERTY")
-education_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X15_EDUCATIONAL_ATTAINMENT")
+age_sex_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X01_AGE_AND_SEX")%>% clean_names()
+income_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X19_INCOME")%>% clean_names()
+race_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X02_RACE")%>% clean_names()
+poverty_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X17_POVERTY")%>% clean_names()
+education_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "X15_EDUCATIONAL_ATTAINMENT")%>% clean_names()
 
 # Meta data 
 metadata_socio_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48_TEXAS.gdb"), layer = "TRACT_METADATA_2019")
 ```
 
+Load Texas counties 
+```{r}
+texas_counties <- st_read(here::here("data", "raw", "Texas_County_Boundaries"))%>% clean_names()
+```
+
+
 Making Socio-demographic dataframe spatial 
 ```{r}
-income_texas_sf <- dplyr::left_join(geom_texas, income_texas, by = c("GEOID_Data"= "GEOID"))
-race_texas_sf <- dplyr::left_join(geom_texas, race_texas, by = c("GEOID_Data"= "GEOID"))
-poverty_texas_sf <- dplyr::left_join(geom_texas, poverty_texas, by = c("GEOID_Data"= "GEOID"))
-education_texas_sf <- dplyr::left_join(geom_texas, education_texas, by = c("GEOID_Data"= "GEOID"))
-age_sex_texas_sf <- dplyr::left_join(geom_texas, age_sex_texas, by = c("GEOID_Data"= "GEOID"))
+income_texas_sf <- dplyr::left_join(geom_texas, income_texas, by = c("geoid_data"= "geoid")) 
+race_texas_sf <- dplyr::left_join(geom_texas, race_texas, by = c("geoid_data"= "geoid")) 
+poverty_texas_sf <- dplyr::left_join(geom_texas, poverty_texas, by = c("geoid_data"= "geoid"))
+education_texas_sf <- dplyr::left_join(geom_texas, education_texas, by = c("geoid_data"= "geoid"))
+age_sex_texas_sf <- dplyr::left_join(geom_texas, age_sex_texas, by = c("geoid_data"= "geoid"))
 
 # Remove non spatial dfs 
-rm(list = c('income_texas', 'race_texas', 'poverty_texas', 'education_texas', 'age_sex_texas'))
+#rm(list = c('income_texas', 'race_texas', 'poverty_texas', 'education_texas', 'age_sex_texas'))
+```
+
+Per county 
+Pull out important columns 
+```{r}
+income_texas_county <- income_texas_sf %>% 
+  group_by(countyfp) %>% 
+  summarise(income_avg = mean(b19001e1, na.rm = TRUE))
+
+race_texas_county <- race_texas_sf %>% 
+  group_by(countyfp) %>% 
+  summarise(pop_total = sum(b02001e1, na.rm = TRUE), 
+            white_total = sum(b02001e2, na.rm = TRUE), 
+            black_aa_total = sum(b02001e3, na.rm = TRUE), # Blacks / African American 
+            ai_an_total = sum(b02001e4, na.rm = TRUE), # American India + Alaska Native
+            asian_total = sum(b02001e5, na.rm = TRUE), 
+            ah_pi_total = sum(b02001e6, na.rm = TRUE), # Native Hawian, other pacific islander
+            other_total = sum(b02001e7, na.rm = TRUE),
+            `2plus_total` = sum(b02001e8, na.rm = TRUE)) # two or more races 
+
+poverty_texas_county <- poverty_texas_sf %>% 
+  group_by(countyfp) %>% 
+  summarise(hh_pov_status_total = sum(b17017e1, na.rm = TRUE))# households Counts in poverty 
+
+
+education_texas_county <- education_texas_sf %>% 
+  group_by(countyfp) %>% 
+  summarise(edu_total = sum(b15001e1, na.rm = TRUE))#  EDUCATIONAL ATTAINMENT FOR THE POPULATION 18 YEARS AND OVER 
+
+
+age_sex_texas_county <- age_sex_texas_sf %>% 
+  group_by(countyfp) %>% 
+  summarise(male_total = sum(b01001e2, na.rm = TRUE), 
+            female_total = sum(b01001e26, na.rm = TRUE), 
+            median_age_mean = mean(b01002e1, na.rm = TRUE), 
+            median_male_age_mean = mean(b01002e2, na.rm = TRUE), 
+            median_female_age_mean = mean(b01002e3, na.rm = TRUE))
+  
+```
+
+
+Needs to be per-capita data 
+Merge all datasets together 
+```{r}
+# Make the COUNTYFP a numeric and order the lists based on it 
+race_texas_county <- race_texas_county %>% arrange(as.numeric(countyfp))
+income_texas_county <- income_texas_county %>% arrange(as.numeric(countyfp))
+poverty_texas_county <- poverty_texas_county %>% arrange(as.numeric(countyfp))
+education_texas_county <- education_texas_county %>% arrange(as.numeric(countyfp))
+age_sex_texas_county <- age_sex_texas_county %>% arrange(as.numeric(countyfp))
+
+
+# Merge the sociodemographic data 
+final_df <- cbind(race_texas_county, income_texas_county, poverty_texas_county, education_texas_county, age_sex_texas_county) 
+
+final_df <- final_df %>% 
+  select(-c(`countyfp.1`, `countyfp.2`, `countyfp.3`, `countyfp.4`, `Shape.1`, `Shape.2`, `Shape.3`, `Shape.4`))
+
+```
+
+Pre capita 
+```{r}
+# Divide the columns by the population column 
+final_df[, 3:17] <- final_df[, 3:17] / final_df$pop_total
+```
+
+Add the county names to the data 
+**This join did not work the way I wanted it to**
+```{r}
+st_crs(final_df)# NAD8 / EPSG",4269] - geographic 
+st_crs(texas_counties)# EPSG",3857 - projection 
+
+texas_counties <- st_transform(texas_counties, crs = "EPSG:4269")
+st_crs(final_df) == st_crs(texas_counties)
+
+socio_demo_texas <- st_join(final_df, texas_counties)
 ```
 
 ```{r}
-ggplot(income_texas_sf) + 
-  geom_sf(aes(color = ))
+dim(socio_demo_texas)
+dim(texas_counties)
+dim(final_df)
+n_distinct(socio_demo_texas$countyfp)
+```
 
-education_texas_sf %>% 
-  filter(Short_Name == "B15001e2")
+```{r}
+texas_counties %>% filter(dps_cnty_n == 1)
+
+final_df %>% filter(countyfp == 1)
+
+```
+
+
+```{r}
+ggplot_static <- ggplot(socio_demo_texas) + 
+  geom_sf(aes(text = paste0("County name:", {cnty_nm}, "<br>", 
+                            "dps_cnty_n:", {dps_cnty_n}, "<br>",
+                            "countyfp:", {countyfp}, "<br>",
+                            "cnty_nbr:", {cnty_nbr}, "<br>"
+                            )))
+
+ggplotly(ggplot_static, tooltip = "text")
+```
+
+
+# --- 
+
+
+```{r}
+metadata_socio_texas %>% 
+  filter(Short_Name == "B15001e1")
+```
+
+
+```{r}
+ggplot(income_texas_sf) + 
+  geom_sf(aes(color = B19001e1))
+
+ggplot(race_texas_sf) + 
+  geom_sf(aes(color = B02001e1))
+
+ggplot(education_texas_sf) + 
+  geom_sf(aes(color = B15001e1))
+
+
+
 ```
 
 
