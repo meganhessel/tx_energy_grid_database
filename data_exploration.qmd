@@ -17,39 +17,19 @@ library(exactextractr)
 
 Load Energy Data & Filter for TEXAS 
 ```{r}
-utility_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "1___Utility_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX")
+utility_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "1___Utility_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX")
 
-plant_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "2___Plant_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX") %>% 
-  rename(cnty_name = county)
+plant_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "2___Plant_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX") %>% rename(cnty_name = county)
 
-wind_energy_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_2_Wind_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX") %>% 
-  rename(cnty_name = county)
+wind_energy_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_2_Wind_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX") %>% rename(cnty_name = county)
 
-solar_energy_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_3_Solar_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX") %>% 
-  rename(cnty_name = county)
+solar_energy_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_3_Solar_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX") %>% rename(cnty_name = county)
 
-storge_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_4_Energy_Storage_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX") %>% 
-  rename(cnty_name = county)
+storge_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_4_Energy_Storage_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX") %>% rename(cnty_name = county)
 
-generator_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_1_Generator_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX") %>% 
-  rename(cnty_name = county)
+generator_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_1_Generator_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX") %>% rename(cnty_name = county)
 
-multifuel_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_5_Multifuel_Y2024.xlsx"), startRow = 2) %>% 
-  clean_names() %>% 
-  filter(state == "TX") %>% 
-  rename(cnty_name = county)
+multifuel_TX <- read.xlsx(here::here("data", "raw", "eia8602024", "3_5_Multifuel_Y2024.xlsx"), startRow = 2) %>% clean_names() %>% filter(state == "TX") %>% rename(cnty_name = county)
 ```
 
 Load Texas Socio-demographic 
@@ -72,7 +52,7 @@ metadata_socio_texas <- st_read(here::here("data", "raw", "ACS_2019_5YR_TRACT_48
 
 Load Texas counties 
 ```{r}
-texas_counties_boundaries <- st_read(here::here("data", "raw", "Texas_County_Boundaries"))%>% clean_names() # Not what I want 
+#texas_counties_boundaries <- st_read(here::here("data", "raw", "Texas_County_Boundaries"))%>% clean_names() # Not what I want 
 
 texas_counties <- st_read(here::here("data", "raw", "tl_2024_us_county"))%>% clean_names() %>% 
   filter(statefp == '48') %>% # THIS IS WHAT I WANT 
@@ -98,19 +78,19 @@ coal_dep <- read_csv(here::here("data", "raw", "coal_deposites", "TX_points.csv"
 This data has wind speed measured at a different height above ground (in meters), ranging from 10 to 200m.
 Taller = faster winds because surface friction slows wind near the ground.
 
-10m — surface weather, not useful for energy 
-80–100m — onshore wind turbine hub height, most common for wind energy analysis 
-120–140m — modern large turbines (increasingly common in West Texas) 
-200m — offshore or research purposes
+10m — Surface weather, not useful for energy. 
+80–100m — Onshore wind turbine hub height, most common for wind energy analysis. 
+120–140m — Modern large turbines (increasingly common in West Texas). 
+200m — Offshore or research purposes. 
 
-Most of the existing West Texas wind farms were built around 80m hub height. New wind turbine development is reaching heights of 100–120m. I will create a data frame with all possible wind turbine heights with wind values from 80 to 140m. 
+Most of the existing West Texas wind farms were built around 80m hub height. New wind turbine development is reaching heights of 100–120m. For this database, I will create a data frame with all possible wind turbine heights ranging from 80m to 140m. 
 
 # Wrangling 
 
 ## Socio-demographic Data
 
-Making Socio-demographic dataframe spatial 
-Join Socio-demographic dataframe  with `geom_texas` to add the countyfp column and make spatial 
+Making socio-demographic dataframe spatial 
+Join socio-demographic dataframe  with `geom_texas` to add the countyfp column and make spatial 
 ```{r}
 income_texas_sf <- dplyr::left_join(geom_texas, income_texas, by = c("geoid_data"= "geoid")) 
 race_texas_sf <- dplyr::left_join(geom_texas, race_texas, by = c("geoid_data"= "geoid")) 
@@ -173,7 +153,7 @@ age_sex_texas_county <- age_sex_texas_county %>% arrange(as.numeric(countyfp))
 # Merge the sociodemographic data 
 final_df_sf <- cbind(race_texas_county, income_texas_county, poverty_texas_county, education_texas_county, age_sex_texas_county) 
 
-# Remove unnessary columns 
+# Remove unnecessary columns 
 final_df_sf <- final_df_sf %>% 
   select(-c(`countyfp.1`, `countyfp.2`, `countyfp.3`, `countyfp.4`, `Shape.1`, `Shape.2`, `Shape.3`, `Shape.4`))
 
@@ -182,7 +162,7 @@ final_df_sf <- final_df_sf %>%
 Pre capita 
 ```{r}
 # Divide the columns by the population column 
-final_df_sf[, 3:17] <- final_df_sf[, 3:17] / final_df$pop_total
+final_df_sf[, 3:17] <- final_df_sf[, 3:17] / final_df_sf$pop_total
 ```
 
 Add the county names to the data 
@@ -191,10 +171,10 @@ Add the county names to the data
 final_df <- final_df_sf %>% 
   st_drop_geometry()
 
-# Join with 
+# Join sociodemo with TX counties  
 socio_demo_texas <- left_join(final_df, texas_counties, by = "countyfp")
 
-# Make spatail 
+# Make spatial 
 socio_demo_texas <- st_as_sf(socio_demo_texas)
 ```
 
@@ -237,7 +217,7 @@ ggplotly(socio_demo_static, tooltip = "text")
 ```{r}
 socio_demo <- ggplot(socio_demo_texas) + 
   geom_sf(aes(fill = ai_an_total,
-              text = paste0("County name:", {name}, "<br>", 
+              text = paste0("County name:", {cnty_name}, "<br>", 
                             "countyfp:", {countyfp}, "<br>",
                             "geoid:", {geoid}, "<br>"
                             )))
@@ -258,8 +238,7 @@ tm_shape(sunshine) +
 texas_counties_proj <- st_transform(texas_counties, crs(sunshine))
 
 # Crop and mask to TEXAS 
-texas_bbox <- ext(texas_counties_proj) # Extracts the bounding box from the vector geometry
-sunshine_masked <- crop(sunshine, texas_bbox)
+sunshine_masked <- crop(sunshine, texas_counties_proj)
 sunshine_masked <- terra::mask(sunshine_masked, texas_counties_proj)
 
 # Check to see if it worked 
@@ -267,6 +246,7 @@ tm_shape(sunshine_masked) +
   tm_raster() + 
   tm_shape(texas_counties) + 
   tm_borders()
+
 ```
 
 Turn rasters into county polygons values 
@@ -276,9 +256,14 @@ texas_counties$ghi <- exact_extract(sunshine_masked, texas_counties, 'mean')
 
 # Make sunshine dataframe 
 sunshine_df <- data.frame(countyfp =texas_counties$countyfp, 
-           cnty_name = texas_counties$name,
+           cnty_name = texas_counties$cnty_name,
            namelsad = texas_counties$namelsad,
-           ghi = texas_counties$ghi)
+           ghi = texas_counties$ghi 
+           #geometry = texas_counties$geometry
+           )
+
+#sunshine_df <- st_as_sf(sunshine_df)
+
 ```
 
 ## Coal Deposites Data 
@@ -287,6 +272,7 @@ County names are all caps
 ```{r}
 # Make county names lowercase, expect the first one 
 coal_dep$cnty_name <- str_to_title(coal_dep$county)
+coal_dep <- coal_dep %>% select(-c(county))
 ```
 
 
@@ -296,8 +282,8 @@ Crop and mask to Texas
 ```{r}
 # Look at the extent of the wind data 
 # Data encompasses the USA 
-tm_shape(wind_envir80) + 
-  tm_raster()
+#tm_shape(wind_envir80) + 
+  #tm_raster()
 
 
 # Make CRS match 
@@ -318,25 +304,25 @@ wind_envir140_masked <- crop(wind_envir140, texas_counties_proj)
 wind_envir140_masked <- terra::mask(wind_envir140_masked, texas_counties_proj)
 
 # Check to see if it worked 
-tm_shape(wind_envir80_masked) + 
-  tm_raster() + 
-  tm_shape(texas_counties) + 
-  tm_borders()
-
-tm_shape(wind_envir100_masked) + 
-  tm_raster() + 
-  tm_shape(texas_counties) + 
-  tm_borders()
-
-tm_shape(wind_envir120_masked) + 
-  tm_raster() + 
-  tm_shape(texas_counties) + 
-  tm_borders()
-
-tm_shape(wind_envir140_masked) + 
-  tm_raster() + 
-  tm_shape(texas_counties) + 
-  tm_borders()
+# tm_shape(wind_envir80_masked) + 
+#   tm_raster() + 
+#   tm_shape(texas_counties) + 
+#   tm_borders()
+# 
+# tm_shape(wind_envir100_masked) + 
+#   tm_raster() + 
+#   tm_shape(texas_counties) + 
+#   tm_borders()
+# 
+# tm_shape(wind_envir120_masked) + 
+#   tm_raster() + 
+#   tm_shape(texas_counties) + 
+#   tm_borders()
+# 
+# tm_shape(wind_envir140_masked) + 
+#   tm_raster() + 
+#   tm_shape(texas_counties) + 
+#   tm_borders()
 
 ```
 
@@ -355,8 +341,11 @@ wind_texas <- data.frame(
   wind_80m = texas_counties$wind_80m, 
   wind_100m = texas_counties$wind_100m, 
   wind_120m = texas_counties$wind_120m, 
-  wind_140m = texas_counties$wind_140m
+  wind_140m = texas_counties$wind_140m 
+  #geometry = texas_counties$geometry
 )
+
+#wind_texas <- st_as_sf(wind_texas)
 
 ```
 
@@ -371,18 +360,41 @@ texas_counties <- texas_counties %>%
 ## Extra Checks 
 
 ```{r}
-coal_dep %>% filter(cnty_name == "Van Zandt")
-sunshine_df %>% filter(cnty_name == "Van Zandt")
-socio_demo_texas %>% filter(cnty_name == "Van Zandt")
+coal_dep 
+sunshine_df 
+socio_demo_texas 
 
-texas_counties %>% filter(cnty_name == "Van Zandt")
+texas_counties
 
-generator_TX %>% filter(cnty_name == "Van Zandt")
-multifuel_TX
-plant_TX
-solar_energy_TX
-storge_TX
-utility_TX
-wind_energy_TX
+generator_TX 
+multifuel_TX 
+plant_TX 
+solar_energy_TX 
+storge_TX 
+utility_TX 
+wind_energy_TX 
+```
+
+```{r}
+# Environmental Factors 
+write.csv(coal_dep, file = here::here("data", "processed", "coal_deposites_texas.csv"))
+write.csv(sunshine_df, file = here::here("data", "processed", "ghi_texas.csv"))
+write.csv(wind_texas, file = here::here("data", "processed", "wind_texas.csv"))
+
+# Socio demographics 
+write.csv(socio_demo_texas, file = here::here("data", "processed", "socio_demo_texas.csv"))
+
+# Counties 
+write.csv(texas_counties, file = here::here("data", "processed", "texas_counties.csv"))
+
+# Energy 
+write.csv(generator_TX, file = here::here("data", "processed", "generator_TX.csv"))
+write.csv(multifuel_TX, file = here::here("data", "processed", "multifuel_TX.csv"))
+write.csv(plant_TX, file = here::here("data", "processed", "plant_TX.csv"))
+write.csv(solar_energy_TX, file = here::here("data", "processed", "solar_energy_TX.csv"))
+write.csv(storge_TX, file = here::here("data", "processed", "storge_TX.csv"))
+write.csv(utility_TX, file = here::here("data", "processed", "utility_TX.csv"))
+write.csv(wind_energy_TX, file = here::here("data", "processed", "wind_energy_TX.csv"))
+
 ```
 
