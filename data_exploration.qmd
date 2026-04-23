@@ -189,41 +189,66 @@ n_distinct(socio_demo_texas$countyfp)
 
 Create map to show results and dataframes 
 ```{r}
-TX_counties_static <- ggplot(texas_counties) + 
-  geom_sf(aes(text = paste0("County name:", {name}, "<br>", 
-                            "countyfp:", {countyfp}, "<br>",
-                            "geoid:", {geoid}, "<br>"
-                            )))
+# TX_counties_static <- ggplot(texas_counties) + 
+#   geom_sf(aes(text = paste0("County name:", {name}, "<br>", 
+#                             "countyfp:", {countyfp}, "<br>",
+#                             "geoid:", {geoid}, "<br>"
+#                             )))
+# 
+# final_df_static <- ggplot(final_df_sf) + 
+#   geom_sf(aes(text = paste0("countyfp:", {countyfp}, "<br>"
+#                             )))
+# 
+# 
+# socio_demo_static <- ggplot(socio_demo_texas) + 
+#   geom_sf(aes(text = paste0("County name:", {name}, "<br>", 
+#                             "countyfp:", {countyfp}, "<br>" )))
+# 
+# TX_counties_static
+# final_df_static
+# socio_demo_static
+# 
+# ggplotly(TX_counties_static, tooltip = "text")
+# ggplotly(final_df_static, tooltip = "text")
+# ggplotly(socio_demo_static, tooltip = "text")
 
-final_df_static <- ggplot(final_df_sf) + 
-  geom_sf(aes(text = paste0("countyfp:", {countyfp}, "<br>"
-                            )))
-
-
-socio_demo_static <- ggplot(socio_demo_texas) + 
-  geom_sf(aes(text = paste0("County name:", {name}, "<br>", 
-                            "countyfp:", {countyfp}, "<br>" )))
-
-TX_counties_static
-final_df_static
-socio_demo_static
-
-ggplotly(TX_counties_static, tooltip = "text")
-ggplotly(final_df_static, tooltip = "text")
-ggplotly(socio_demo_static, tooltip = "text")
+# socio_demo <- ggplot(socio_demo_texas) + 
+#   geom_sf(aes(fill = ai_an_total,
+#               text = paste0("County name:", {cnty_name}, "<br>", 
+#                             "countyfp:", {countyfp}, "<br>",
+#                             "geoid:", {geoid}, "<br>"
+#                             )))
+# 
+# ggplotly(socio_demo, tooltip = "text")
 ```
 
+## Energy data 
 
+Clean / remove unnessary columns  
 ```{r}
-socio_demo <- ggplot(socio_demo_texas) + 
-  geom_sf(aes(fill = ai_an_total,
-              text = paste0("County name:", {cnty_name}, "<br>", 
-                            "countyfp:", {countyfp}, "<br>",
-                            "geoid:", {geoid}, "<br>"
-                            )))
+utility_TX <- utility_TX %>% 
+  select(-c(owner_of_plants_reported_on_form, operator_of_plants_reported_on_form, asset_manager_of_plants_reported_on_form, other_relationships_with_plants_reported_on_form))
 
-ggplotly(socio_demo, tooltip = "text")
+plant_TX <- plant_TX %>% 
+  select(-c(latitude, longitude, name_of_water_source, primary_purpose_naics_code,ferc_cogeneration_status, ferc_cogeneration_docket_number, ferc_small_power_producer_status, ferc_small_power_producer_docket_number, ferc_small_power_producer_status, ferc_exempt_wholesale_generator_status, ferc_exempt_wholesale_generator_docket_number, ash_impoundment, ash_impoundment_lined, ash_impoundment_status, transmission_or_distribution_system_owner, energy_storage, natural_gas_ldc_name, natural_gas_pipeline_name_1, natural_gas_pipeline_name_2, natural_gas_pipeline_name_3,pipeline_notes, natural_gas_storage, liquefied_natural_gas_storage, transmission_or_distribution_system_owner_state))
+
+generator_TX <- generator_TX %>% 
+  select(c(utility_id, utility_name, plant_code, plant_name, state, cnty_name, generator_id, technology, prime_mover, ownership, nameplate_capacity_mw, nameplate_power_factor, summer_capacity_mw, winter_capacity_mw, minimum_load_mw, status, operating_month, operating_year, sector_name, sector, energy_source_1, multiple_fuels))
+       
+wind_energy_TX <- wind_energy_TX %>% 
+  select(-c(predominant_turbine_model_number, predominant_turbine_manufacturer))
+ 
+solar_energy_TX <- solar_energy_TX %>% 
+  select(-c(lenses_mirrors, single_axis_tracking, dual_axis_tracking, fixed_tilt, bifacial,east_west_fixed_tilt, parabolic_trough, linear_fresnel, power_tower, dish_engine, other_solar_technology, azimuth_angle, tilt_angle, crystalline_silicon, thin_film_cd_te, thin_film_a_si, thin_film_cigs, thin_film_other, other_materials))
+
+storge_TX <- storge_TX[, 1:20]
+
+multifuel_TX <- multifuel_TX %>% 
+  select(-c(cofire_energy_source_1, cofire_energy_source_2, cofire_energy_source_3, cofire_energy_source_4, cofire_energy_source_5, cofire_energy_source_6, time_to_switch_from_gas_to_oil, factors_that_limit_switching, storage_limits, other_limits))
+
 ```
+
+
 
 ## Sunshine Data 
 
@@ -356,24 +381,7 @@ texas_counties <- texas_counties %>%
 
 ```
 
-
-## Extra Checks 
-
-```{r}
-coal_dep 
-sunshine_df 
-socio_demo_texas 
-
-texas_counties
-
-generator_TX 
-multifuel_TX 
-plant_TX 
-solar_energy_TX 
-storge_TX 
-utility_TX 
-wind_energy_TX 
-```
+# Save data as CSVs 
 
 ```{r}
 # Environmental Factors 
