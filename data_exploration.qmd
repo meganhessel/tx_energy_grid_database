@@ -11,6 +11,8 @@ library(plotly)
 library(tmap)
 library(terra)
 library(exactextractr)
+library(arrow)
+library(sfarrow)
 ```
 
 # Load Data 
@@ -381,8 +383,9 @@ texas_counties <- texas_counties %>%
 
 ```
 
-# Save data as CSVs 
+# Save data 
 
+As CSVs 
 ```{r}
 # Environmental Factors 
 write.csv(coal_dep, file = here::here("data", "processed", "coal_deposites_texas.csv"))
@@ -405,4 +408,30 @@ write.csv(utility_TX, file = here::here("data", "processed", "utility_TX.csv"))
 write.csv(wind_energy_TX, file = here::here("data", "processed", "wind_energy_TX.csv"))
 
 ```
+
+As parquet file 
+```{r}
+# Environmental factors 
+write_parquet(coal_dep, sink = here::here("data", "processed", "coal_deposites_texas.parquet"))
+write_parquet(sunshine_df, sink = here::here("data", "processed", "ghi_texas.parquet"))
+write_parquet(wind_texas, sink = here::here("data", "processed", "wind_texas.parquet"))
+
+# Socio demographics 
+st_write_parquet(socio_demo_texas, dsn = here::here("data", "processed", "socio_demo_texas.parquet"))
+
+# Counties 
+st_write_parquet(texas_counties, dsn = here::here("data", "processed", "texas_counties.parquet"))
+
+# Energy 
+write_parquet(generator_TX, sink = here::here("data", "processed", "generator_TX.parquet"))
+write_parquet(multifuel_TX, sink = here::here("data", "processed", "multifuel_TX.parquet"))
+write_parquet(plant_TX, sink = here::here("data", "processed", "plant_TX.parquet"))
+write_parquet(solar_energy_TX, sink = here::here("data", "processed", "solar_energy_TX.parquet"))
+write_parquet(storge_TX, sink = here::here("data", "processed", "storge_TX.parquet"))
+write_parquet(utility_TX, sink = here::here("data", "processed", "utility_TX.parquet"))
+write_parquet(wind_energy_TX, sink = here::here("data", "processed", "wind_energy_TX.parquet"))
+
+```
+
+
 
