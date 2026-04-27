@@ -417,17 +417,17 @@ write_parquet(sunshine_df, sink = here::here("data", "processed", "ghi_texas.par
 write_parquet(wind_texas, sink = here::here("data", "processed", "wind_texas.parquet"))
 
 # Socio demographics 
-st_write_parquet(socio_demo_texas, dsn = here::here("data", "processed", "socio_demo_texas.parquet"))
+st_write_parquet(socio_demo_texas, dsn = here::here("data", "processed", "socio_demo_texas_sf.parquet"))
 
 # Counties 
-st_write_parquet(texas_counties, dsn = here::here("data", "processed", "texas_counties.parquet"))
+st_write_parquet(texas_counties, dsn = here::here("data", "processed", "texas_counties_sf.parquet"))
 
 # Energy 
 write_parquet(generator_TX, sink = here::here("data", "processed", "generator_TX.parquet"))
 write_parquet(multifuel_TX, sink = here::here("data", "processed", "multifuel_TX.parquet"))
 write_parquet(plant_TX, sink = here::here("data", "processed", "plant_TX.parquet"))
 write_parquet(solar_energy_TX, sink = here::here("data", "processed", "solar_energy_TX.parquet"))
-write_parquet(storge_TX, sink = here::here("data", "processed", "storge_TX.parquet"))
+write_parquet(storge_TX, sink = here::here("data", "processed", "storage_TX.parquet"))
 write_parquet(utility_TX, sink = here::here("data", "processed", "utility_TX.parquet"))
 write_parquet(wind_energy_TX, sink = here::here("data", "processed", "wind_energy_TX.parquet"))
 
