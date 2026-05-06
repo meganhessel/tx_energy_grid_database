@@ -33,3 +33,4 @@ CREATE TABLE socio_demo AS
 
 CREATE TABLE texas_counties AS 
     SELECT * FROM read_csv('/Users/meganhessel/Documents/MEDS/eds213_databases/final_database_proj/tx_energy_grid_database/data/processed/texas_counties.csv');
+

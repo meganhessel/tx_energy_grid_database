@@ -250,6 +250,24 @@ multifuel_TX <- multifuel_TX %>%
 
 ```
 
+Change plant voltage columns to numeric 
+```{r}
+plant_TX$grid_voltage_k_v <- gsub(" ", "", plant_TX$grid_voltage_k_v)
+plant_TX$grid_voltage_k_v <- as.numeric(plant_TX$grid_voltage_k_v)
+
+plant_TX$grid_voltage_2_k_v <- gsub(" ", "", plant_TX$grid_voltage_2_k_v)
+plant_TX$grid_voltage_2_k_v <- as.numeric(plant_TX$grid_voltage_2_k_v)
+
+plant_TX$grid_voltage_3_k_v <- gsub(" ", "", plant_TX$grid_voltage_3_k_v)
+plant_TX$grid_voltage_3_k_v <- as.numeric(plant_TX$grid_voltage_3_k_v)
+
+# Create a total voltage column for EACH ROW 
+plant_TX %>% 
+  mutate(total_voltage = rowSums(grid_voltage_k_v, grid_voltage_2_k_v, grid_voltage_3_k_v, na.rm = TRUE)) # This isn't working 
+
+plant_TX$total_voltage <- rowSums(plant_TX[17:19], na.rm = TRUE) # dont really wanna do index summing 
+
+```
 
 
 ## Sunshine Data 
