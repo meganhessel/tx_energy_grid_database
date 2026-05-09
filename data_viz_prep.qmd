@@ -1,0 +1,48 @@
+---
+title: "data_viz_prep"
+format: html
+---
+
+```{r}
+install.packages('DBI')
+# Libraries
+library(tidyverse)
+library(DBI)
+library(dbplyr)
+library(duckdb)
+
+# Connection
+conn <- DBI::dbConnect(duckdb::duckdb(),
+                       dbdir = "database_finalProj.db")
+
+# Tables 
+DBI::dbListTables(conn)
+```
+
+**QUESTION 1:** ENVIR ALIGNMENT - Do Texas communities leverage local environmental resources in their energy generation mix?--
+
+Q1.A: Is solar energy adoption associated with solar irradiance levels across Texas communities?
+
+```{r}
+solar_energy <- tbl(conn, "solar_energy")
+solar_energy
+```
+
+```{r}
+solar_energy_texas <- DBI::dbGetQuery(
+  conn,
+  "SELECT cnty_name, COUNT(*) AS count ,AVG(nameplate_capacity_mw) AS capacity_avg, AVG(ghi) AS ghi_avg FROM solar_energy AS solar
+JOIN ghi USING(cnty_name)
+JOIN 
+GROUP BY cnty_name
+ORDER BY cnty_name;"
+)
+
+ggplot(solar_energy_texas) + 
+  geom_col(aes(y = arrange(cnty_name, ghi_avg), 
+           x = capacity_avg))
+  
+str(solar_energy_texas)
+texas_counties
+```
+

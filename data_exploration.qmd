@@ -13,6 +13,7 @@ library(terra)
 library(exactextractr)
 library(arrow)
 library(sfarrow)
+library(geoarrow)
 ```
 
 # Load Data 
@@ -120,7 +121,7 @@ race_texas_county <- race_texas_sf %>%
             asian_total = sum(b02001e5, na.rm = TRUE), 
             ah_pi_total = sum(b02001e6, na.rm = TRUE), # Native Hawian, other pacific islander
             other_total = sum(b02001e7, na.rm = TRUE),
-            `2plus_total` = sum(b02001e8, na.rm = TRUE)) # two or more races 
+            `plus2_total` = sum(b02001e8, na.rm = TRUE)) # two or more races 
 
 poverty_texas_county <- poverty_texas_sf %>% 
   group_by(countyfp) %>% 
@@ -188,6 +189,16 @@ dim(texas_counties)
 dim(final_df)
 n_distinct(socio_demo_texas$countyfp)
 ```
+Keep only necessary columns 
+```{r}
+socio_demo_texas <- socio_demo_texas[1:25]
+```
+
+Make non spatial 
+```{r}
+socio_demo_texas_nonsf <- st_drop_geometry(socio_demo_texas) 
+```
+
 
 Create map to show results and dataframes 
 ```{r}
@@ -405,18 +416,23 @@ texas_counties <- texas_counties %>%
 
 As CSVs 
 ```{r}
-# Environmental Factors 
+# Environmental Factors --- 
 write.csv(coal_dep, file = here::here("data", "processed", "coal_deposites_texas.csv"))
 write.csv(sunshine_df, file = here::here("data", "processed", "ghi_texas.csv"))
 write.csv(wind_texas, file = here::here("data", "processed", "wind_texas.csv"))
 
-# Socio demographics 
+# Socio demographics --- 
 write.csv(socio_demo_texas, file = here::here("data", "processed", "socio_demo_texas.csv"))
 
-# Counties 
+# Counties --- 
 write.csv(texas_counties, file = here::here("data", "processed", "texas_counties.csv"))
+# convert geometry to binary 
+texas_counties_v1 <- texas_counties
+texas_counties_v1$geometry <- sf::st_as_binary(texas_counties_v1$geometry) 
+# save binart dataframe 
+write_parquet(texas_counties, here::here("data", "processed", "texas_counties_fixed.parquet"))
 
-# Energy 
+# Energy -- 
 write.csv(generator_TX, file = here::here("data", "processed", "generator_TX.csv"))
 write.csv(multifuel_TX, file = here::here("data", "processed", "multifuel_TX.csv"))
 write.csv(plant_TX, file = here::here("data", "processed", "plant_TX.csv"))
@@ -437,8 +453,13 @@ write_parquet(wind_texas, sink = here::here("data", "processed", "wind_texas.par
 # Socio demographics 
 st_write_parquet(socio_demo_texas, dsn = here::here("data", "processed", "socio_demo_texas_sf.parquet"))
 
+write_parquet(socio_demo_texas_nonsf, sink = here::here("data", "processed", "socio_demo_texas.parquet"))
+
 # Counties 
-st_write_parquet(texas_counties, dsn = here::here("data", "processed", "texas_counties_sf.parquet"))
+write_geoparquet(texas_counties, dsn = here::here("data", "processed", "texas_counties_sf.parquet"))
+
+write_parquet(st_as_sf(counties), "texas_counties_fixed.parquet")
+
 
 # Energy 
 write_parquet(generator_TX, sink = here::here("data", "processed", "generator_TX.parquet"))
