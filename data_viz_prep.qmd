@@ -2,9 +2,11 @@
 title: "data_viz_prep"
 format: html
 ---
+# OVERARCHING QUESTION:
+Do Texas communities optimize their energy generation around local environmental resources, and do socioeconomic and demographic disparities influence how those resources are utilized?
 
 ```{r}
-install.packages('DBI')
+#install.packages('DBI')
 # Libraries
 library(tidyverse)
 library(DBI)
@@ -19,30 +21,107 @@ conn <- DBI::dbConnect(duckdb::duckdb(),
 DBI::dbListTables(conn)
 ```
 
-**QUESTION 1:** ENVIR ALIGNMENT - Do Texas communities leverage local environmental resources in their energy generation mix?--
+## **QUESTION 1:** ENVIR ALIGNMENT - Do Texas communities leverage local environmental resources in their energy generation mix?--
 
-Q1.A: Is solar energy adoption associated with solar irradiance levels across Texas communities?
+### Q1.A: Is solar energy adoption associated with solar irradiance levels across Texas communities?
 
 ```{r}
 solar_energy <- tbl(conn, "solar_energy")
 solar_energy
 ```
 
+**Sunshine**
+Need to later - JOIN texas_counties polygons 
 ```{r}
+# SQL Query 
 solar_energy_texas <- DBI::dbGetQuery(
   conn,
   "SELECT cnty_name, COUNT(*) AS count ,AVG(nameplate_capacity_mw) AS capacity_avg, AVG(ghi) AS ghi_avg FROM solar_energy AS solar
 JOIN ghi USING(cnty_name)
-JOIN 
 GROUP BY cnty_name
-ORDER BY cnty_name;"
+ORDER BY cnty_name"
 )
 
+
+# Scatter 
 ggplot(solar_energy_texas) + 
-  geom_col(aes(y = arrange(cnty_name, ghi_avg), 
-           x = capacity_avg))
+  geom_point(aes(y = capacity_avg, 
+                 x = ghi_avg)) + 
+  geom_smooth(aes(y = capacity_avg, 
+                 x = ghi_avg), 
+              method = lm, se = FALSE) + 
+  theme_classic()
   
-str(solar_energy_texas)
-texas_counties
+
+```
+
+
+###  Q1.B: Is wind energy capacity associated with wind resource availability across Texas communities?
+
+```{r}
+wind_energy <- tbl(conn, "wind_energy")
+wind_energy
+```
+
+**Wind**
+```{r}
+# SQL Query 
+wind_energy_texas <- DBI::dbGetQuery(
+  conn,
+  "SELECT cnty_name, AVG(wind_100m) AS windspeed_100m_avg, AVG(nameplate_capacity_mw) AS capacity_avg FROM wind_energy
+    JOIN wind USING(cnty_name)
+    GROUP BY cnty_name
+    ORDER BY cnty_name"
+)
+
+wind_energy_texas
+
+# Scatter 
+ggplot(wind_energy_texas) + 
+  geom_point(aes(y = capacity_avg, 
+                 x = windspeed_100m_avg)) + 
+  geom_smooth(aes(y = capacity_avg, 
+                 x = windspeed_100m_avg), 
+              method = lm, se = FALSE) + 
+  theme_classic()
+  
+```
+
+
+## QUESTION 2: How is energy generation distributed across socioeconomically disadvantaged communities in Texas?
+
+### Q2.A: How does residential energy source distribution vary across income brackets? 
+
+```{r}
+socio_demo <- tbl(conn, "socio_demo")
+socio_demo
+```
+
+```{r}
+income_energy <- dbGetQuery(conn, "SELECT cnty_name, 
+        AVG(income_avg) AS avg_income, 
+        SUM(total_voltage) AS total_voltage, 
+        COUNT(*) AS plant_count, 
+        AVG(solar.nameplate_capacity_mw) AS solar_avg_capacity_mw,
+        AVG(wind.nameplate_capacity_mw) AS wind_avg_capacity_mw
+    FROM plant_energy 
+    -- Join the other datasets 
+    JOIN socio_demo USING (cnty_name)
+    JOIN solar_energy AS solar USING (cnty_name)
+    JOIN wind_energy AS wind USING (cnty_name)
+    GROUP BY cnty_name
+    ORDER BY cnty_name")
+
+income_energy
+
+```
+
+
+
+# Close databse 
+```{r}
+# CLOSE DATABASE CONNECTION  - MUST DO 
+DBI::dbDisconnect(conn, shutdown = TRUE)
+
 ```
 

@@ -38,15 +38,12 @@ CREATE TABLE socio_demo AS
 
 CREATE TABLE texas_counties AS 
 SELECT *, ST_GeomFromWKB(geometry) AS geometry 
-FROM read_parquet('/Users/meganhessel/Documents/MEDS/eds213_databases/final_database_proj/tx_energy_grid_database/data/processed/texas_counties_sf.parquet');
+FROM read_parquet('/Users/meganhessel/Documents/MEDS/eds213_databases/final_database_proj/tx_energy_grid_database/data/processed/texas_counties_fixed.parquet');
 
 CREATE TABLE texas_counties_csv AS 
 SELECT *, ST_GeomFromText(geometry) AS geometry 
 FROM read_csv('/Users/meganhessel/Documents/MEDS/eds213_databases/final_database_proj/tx_energy_grid_database/data/processed/texas_counties.csv');
 
-SELECT * FROM parquet_scan('/path/to/texas_counties_sf.parquet') LIMIT 1;
-SELECT * FROM parquet_scan('/Users/meganhessel/Documents/MEDS/eds213_databases/final_database_proj/tx_energy_grid_database/data/processed/texas_counties_sf.parquet') LIMIT 1;
 
-
-DROP TABLE IF EXISTS texas_counties;
+--DROP TABLE IF EXISTS texas_counties;
 
