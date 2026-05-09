@@ -273,8 +273,8 @@ plant_TX$grid_voltage_3_k_v <- gsub(" ", "", plant_TX$grid_voltage_3_k_v)
 plant_TX$grid_voltage_3_k_v <- as.numeric(plant_TX$grid_voltage_3_k_v)
 
 # Create a total voltage column for EACH ROW 
-plant_TX %>% 
-  mutate(total_voltage = rowSums(grid_voltage_k_v, grid_voltage_2_k_v, grid_voltage_3_k_v, na.rm = TRUE)) # This isn't working 
+#plant_TX %>% 
+  #mutate(total_voltage = rowSums(grid_voltage_k_v, grid_voltage_2_k_v, grid_voltage_3_k_v, na.rm = TRUE)) # This isn't working 
 
 plant_TX$total_voltage <- rowSums(plant_TX[17:19], na.rm = TRUE) # dont really wanna do index summing 
 
@@ -428,7 +428,7 @@ write.csv(socio_demo_texas, file = here::here("data", "processed", "socio_demo_t
 write.csv(texas_counties, file = here::here("data", "processed", "texas_counties.csv"))
 # convert geometry to binary 
 texas_counties_v1 <- texas_counties
-texas_counties_v1$geometry <- sf::st_as_binary(texas_counties_v1$geometry) 
+texas_counties_v1$geometry <- sf::st_as_binary(texas_counties_v1$geometry, hex = FALSE) 
 # save binart dataframe 
 write_parquet(texas_counties, here::here("data", "processed", "texas_counties_fixed.parquet"))
 
