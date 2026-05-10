@@ -45,5 +45,5 @@ SELECT *, ST_GeomFromText(geometry) AS geometry
 FROM read_csv('/Users/meganhessel/Documents/MEDS/eds213_databases/final_database_proj/tx_energy_grid_database/data/processed/texas_counties.csv');
 
 
---DROP TABLE IF EXISTS texas_counties;
+-- DROP TABLE IF EXISTS socio_demo;
 

@@ -98,21 +98,44 @@ socio_demo
 ```
 
 ```{r}
-income_energy <- dbGetQuery(conn, "SELECT cnty_name, 
-        AVG(income_avg) AS avg_income, 
-        SUM(total_voltage) AS total_voltage, 
-        COUNT(*) AS plant_count, 
+income_energy <- dbGetQuery(
+  conn,
+  "SELECT cnty_name,
+        AVG(income_avg) AS avg_income,
+        SUM(total_voltage) AS total_voltage,
+        COUNT(*) AS plant_count,
         AVG(solar.nameplate_capacity_mw) AS solar_avg_capacity_mw,
         AVG(wind.nameplate_capacity_mw) AS wind_avg_capacity_mw
-    FROM plant_energy 
-    -- Join the other datasets 
+    FROM plant_energy
+    -- Join the other datasets
     JOIN socio_demo USING (cnty_name)
     JOIN solar_energy AS solar USING (cnty_name)
     JOIN wind_energy AS wind USING (cnty_name)
     GROUP BY cnty_name
-    ORDER BY cnty_name")
+    ORDER BY cnty_name"
+) 
 
 income_energy
+
+```
+
+```{r}
+
+income_energy <- income_energy %>% 
+  mutate(avg_income_bin = case_when(
+    income_energy$avg_income < 25000 ~ "Under 25K", 
+    income_energy$avg_income < 50000 ~ "25K -50K", 
+    income_energy$avg_income < 100000 ~ "50K - 100K", 
+    income_energy$avg_income < 150000 ~ "100K - 150K", 
+    income_energy$avg_income < 150000 ~ "150K+" 
+    ))
+
+income_energy %>% 
+  group_by(avg_income_bin) %>% 
+  summarise(across(everything(), mean, na.rm = TRUE))
+
+income_energy
+
 
 ```
 
